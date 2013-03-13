@@ -68,21 +68,21 @@ class Bbcode
     Смайлики и прочие мнемоники. Массив: 'мнемоника' => 'ее_замена'.
     */
 
-    public $mnemonics = array();
+    protected $mnemonics = array();
 
     /*
     Флажок, включающий/выключающий автоматические ссылки.
     Смотрите файл config/parser.config.php
     */
 
-    public $autolinks = true;
+    protected $autolinks = true;
 
     /*
     Массив замен для автоматических ссылок.
     Смотрите файл config/parser.config.php
     */
 
-    public $preg_autolinks = array(
+    protected $preg_autolinks = array(
         'pattern' => array(
             "'[\w\+]+://[A-z0-9\.\?\+\-/_=&%#:;]+[\w/=]+'si",
             "'([^/])(www\.[A-z0-9\.\?\+\-/_=&%#:;]+[\w/=]+)'si",
@@ -207,12 +207,10 @@ class Bbcode
 
     public function __construct($code = '')
     {
-        $this->_current_path = dirname(__FILE__) . DIRECTORY_SEPARATOR;
-        include $this->_current_path . 'config' . DIRECTORY_SEPARATOR . 'tags.php';
-
-        $this->tags         = $tags;
-        $this->_children    = $children;
-        $this->_ends        = $ends;
+        $this->_current_path    = dirname(__FILE__) . DIRECTORY_SEPARATOR;
+        $this->tags             = $this->prepareTags();
+        $this->_children        = $this->prepareChildren();
+        $this->_ends            = $this->prepareEnds();
 
         $this->parse($code);
     }
@@ -1446,5 +1444,343 @@ class Bbcode
             $this->_tag_objects[$handler] = new $handler;
 
         return true;
+    }
+
+    /**
+     * Prepare tags
+     *
+     * Файл содержит умолчальные настройки тегов bbcode.
+     * Список поддерживаемых тегов с указанием соответствующих им классов-обработчиков:
+     *
+     * @access protected
+     * @return array
+     */
+
+    protected function prepareTags()
+    {
+        return array(
+            // Основные теги
+            '*'            => 'Xbb_Tags_Li',
+            'a'            => 'Xbb_Tags_A',
+            'abbr'         => 'Xbb_Tags_Abbr',
+            'acronym'      => 'Xbb_Tags_Acronym',
+            'address'      => 'Xbb_Tags_Address',
+            'align'        => 'Xbb_Tags_Align',
+            'anchor'       => 'Xbb_Tags_A',
+            'b'            => 'Xbb_Tags_Simple',
+            'bbcode'       => 'Xbb_Tags_Bbcode',
+            'bdo'          => 'Xbb_Tags_Bdo',
+            'big'          => 'Xbb_Tags_Simple',
+            'blockquote'   => 'Xbb_Tags_Quote',
+            'br'           => 'Xbb_Tags_Br',
+            'caption'      => 'Xbb_Tags_Caption',
+            'center'       => 'Xbb_Tags_Align',
+            'cite'         => 'Xbb_Tags_Simple',
+            'color'        => 'Xbb_Tags_Color',
+            'del'          => 'Xbb_Tags_Simple',
+            'em'           => 'Xbb_Tags_Simple',
+            'email'        => 'Xbb_Tags_Email',
+            'font'         => 'Xbb_Tags_Font',
+            'google'       => 'Xbb_Tags_Google',
+            'h1'           => 'Xbb_Tags_P',
+            'h2'           => 'Xbb_Tags_P',
+            'h3'           => 'Xbb_Tags_P',
+            'h4'           => 'Xbb_Tags_P',
+            'h5'           => 'Xbb_Tags_P',
+            'h6'           => 'Xbb_Tags_P',
+            'hr'           => 'Xbb_Tags_Hr',
+            'i'            => 'Xbb_Tags_Simple',
+            'img'          => 'Xbb_Tags_Img',
+            'ins'          => 'Xbb_Tags_Simple',
+            'justify'      => 'Xbb_Tags_Align',
+            'left'         => 'Xbb_Tags_Align',
+            'list'         => 'Xbb_Tags_List',
+            'nobb'         => 'Xbb_Tags_Nobb',
+            'ol'           => 'Xbb_Tags_List',
+            'p'            => 'Xbb_Tags_P',
+            'quote'        => 'Xbb_Tags_Quote',
+            'right'        => 'Xbb_Tags_Align',
+            's'            => 'Xbb_Tags_Simple',
+            'size'         => 'Xbb_Tags_Size',
+            'small'        => 'Xbb_Tags_Simple',
+            'strike'       => 'Xbb_Tags_Simple',
+            'strong'       => 'Xbb_Tags_Simple',
+            'sub'          => 'Xbb_Tags_Simple',
+            'sup'          => 'Xbb_Tags_Simple',
+            'table'        => 'Xbb_Tags_Table',
+            'td'           => 'Xbb_Tags_Td',
+            'th'           => 'Xbb_Tags_Th',
+            'tr'           => 'Xbb_Tags_Tr',
+            'tt'           => 'Xbb_Tags_Simple',
+            'u'            => 'Xbb_Tags_Simple',
+            'ul'           => 'Xbb_Tags_List',
+            'url'          => 'Xbb_Tags_A',
+            'var'          => 'Xbb_Tags_Simple',
+
+            // Теги для вывода кода и подсветки синтаксисов (с помощью GeSHi)
+            '4cs'               => 'Xbb_Tags_Code',
+            '6502acme'          => 'Xbb_Tags_Code',
+            '6502kickass'       => 'Xbb_Tags_Code',
+            '6502tasm'          => 'Xbb_Tags_Code',
+            '68000devpac'       => 'Xbb_Tags_Code',
+            'abap'              => 'Xbb_Tags_Code',
+            'actionscript'      => 'Xbb_Tags_Code',
+            'actionscript3'     => 'Xbb_Tags_Code',
+            'ada'               => 'Xbb_Tags_Code',
+            'algol'             => 'Xbb_Tags_Code',
+            'apache'            => 'Xbb_Tags_Code',
+            'applescript'       => 'Xbb_Tags_Code',
+            'apt_sources'       => 'Xbb_Tags_Code',
+            'asm'               => 'Xbb_Tags_Code',
+            'asp'               => 'Xbb_Tags_Code',
+            'autoconf'          => 'Xbb_Tags_Code',
+            'autohotkey'        => 'Xbb_Tags_Code',
+            'autoit'            => 'Xbb_Tags_Code',
+            'avisynth'          => 'Xbb_Tags_Code',
+            'awk'               => 'Xbb_Tags_Code',
+            'bascomavr'         => 'Xbb_Tags_Code',
+            'bash'              => 'Xbb_Tags_Code',
+            'basic4gl'          => 'Xbb_Tags_Code',
+            'bf'                => 'Xbb_Tags_Code',
+            'bibtex'            => 'Xbb_Tags_Code',
+            'blitzbasic'        => 'Xbb_Tags_Code',
+            'bnf'               => 'Xbb_Tags_Code',
+            'boo'               => 'Xbb_Tags_Code',
+            'c'                 => 'Xbb_Tags_Code',
+            'c++'               => 'Xbb_Tags_Code',
+            'c#'                => 'Xbb_Tags_Code',
+            'c_loadrunner'      => 'Xbb_Tags_Code',
+            'c_mac'             => 'Xbb_Tags_Code',
+            'caddcl'            => 'Xbb_Tags_Code',
+            'cadlisp'           => 'Xbb_Tags_Code',
+            'cfdg'              => 'Xbb_Tags_Code',
+            'cfm'               => 'Xbb_Tags_Code',
+            'chaiscript'        => 'Xbb_Tags_Code',
+            'cil'               => 'Xbb_Tags_Code',
+            'clojure'           => 'Xbb_Tags_Code',
+            'cmake'             => 'Xbb_Tags_Code',
+            'cobol'             => 'Xbb_Tags_Code',
+            'code'              => 'Xbb_Tags_Code',
+            'coffeescript'      => 'Xbb_Tags_Code',
+            'cpp-qt'            => 'Xbb_Tags_Code',
+            'css'               => 'Xbb_Tags_Code',
+            'cuesheet'          => 'Xbb_Tags_Code',
+            'd'                 => 'Xbb_Tags_Code',
+            'dcs'               => 'Xbb_Tags_Code',
+            'delphi'            => 'Xbb_Tags_Code',
+            'diff'              => 'Xbb_Tags_Code',
+            'div'               => 'Xbb_Tags_Code',
+            'dos'               => 'Xbb_Tags_Code',
+            'e'                 => 'Xbb_Tags_Code',
+            'ecmascript'        => 'Xbb_Tags_Code',
+            'eiffel'            => 'Xbb_Tags_Code',
+            'email'             => 'Xbb_Tags_Code',
+            'epc'               => 'Xbb_Tags_Code',
+            'erlang'            => 'Xbb_Tags_Code',
+            'euphoria'          => 'Xbb_Tags_Code',
+            'f++'               => 'Xbb_Tags_Code',
+            'f1'                => 'Xbb_Tags_Code',
+            'falcon'            => 'Xbb_Tags_Code',
+            'fo'                => 'Xbb_Tags_Code',
+            'fortran'           => 'Xbb_Tags_Code',
+            'freebasic'         => 'Xbb_Tags_Code',
+            'gambas'            => 'Xbb_Tags_Code',
+            'gdb'               => 'Xbb_Tags_Code',
+            'genero'            => 'Xbb_Tags_Code',
+            'genie'             => 'Xbb_Tags_Code',
+            'gettext'           => 'Xbb_Tags_Code',
+            'glsl'              => 'Xbb_Tags_Code',
+            'gml'               => 'Xbb_Tags_Code',
+            'gnuplot'           => 'Xbb_Tags_Code',
+            'go'                => 'Xbb_Tags_Code',
+            'groovy'            => 'Xbb_Tags_Code',
+            'gwbasic'           => 'Xbb_Tags_Code',
+            'haskell'           => 'Xbb_Tags_Code',
+            'hicest'            => 'Xbb_Tags_Code',
+            'hq9plus'           => 'Xbb_Tags_Code',
+            'html4'             => 'Xbb_Tags_Code',
+            'html5'             => 'Xbb_Tags_Code',
+            'icon'              => 'Xbb_Tags_Code',
+            'idl'               => 'Xbb_Tags_Code',
+            'ini'               => 'Xbb_Tags_Code',
+            'inno'              => 'Xbb_Tags_Code',
+            'intercal'          => 'Xbb_Tags_Code',
+            'io'                => 'Xbb_Tags_Code',
+            'j'                 => 'Xbb_Tags_Code',
+            'java'              => 'Xbb_Tags_Code',
+            'java5'             => 'Xbb_Tags_Code',
+            'jquery'            => 'Xbb_Tags_Code',
+            'js'                => 'Xbb_Tags_Code',
+            'kixtart'           => 'Xbb_Tags_Code',
+            'klonec'            => 'Xbb_Tags_Code',
+            'klonecpp'          => 'Xbb_Tags_Code',
+            'latex'             => 'Xbb_Tags_Code',
+            'lb'                => 'Xbb_Tags_Code',
+            'lisp'              => 'Xbb_Tags_Code',
+            'llvm'              => 'Xbb_Tags_Code',
+            'locobasic'         => 'Xbb_Tags_Code',
+            'logtalk'           => 'Xbb_Tags_Code',
+            'lolcode'           => 'Xbb_Tags_Code',
+            'lotusformulas'     => 'Xbb_Tags_Code',
+            'lotusscript'       => 'Xbb_Tags_Code',
+            'lscript'           => 'Xbb_Tags_Code',
+            'lsl2'              => 'Xbb_Tags_Code',
+            'lua'               => 'Xbb_Tags_Code',
+            'm68k'              => 'Xbb_Tags_Code',
+            'magiksf'           => 'Xbb_Tags_Code',
+            'make'              => 'Xbb_Tags_Code',
+            'mapbasic'          => 'Xbb_Tags_Code',
+            'matlab'            => 'Xbb_Tags_Code',
+            'mirc'              => 'Xbb_Tags_Code',
+            'mmix'              => 'Xbb_Tags_Code',
+            'modula2'           => 'Xbb_Tags_Code',
+            'modula3'           => 'Xbb_Tags_Code',
+            'mpasm'             => 'Xbb_Tags_Code',
+            'mxml'              => 'Xbb_Tags_Code',
+            'mysql'             => 'Xbb_Tags_Code',
+            'newlisp'           => 'Xbb_Tags_Code',
+            'nsis'              => 'Xbb_Tags_Code',
+            'oberon2'           => 'Xbb_Tags_Code',
+            'objc'              => 'Xbb_Tags_Code',
+            'objeck'            => 'Xbb_Tags_Code',
+            'ocaml'             => 'Xbb_Tags_Code',
+            'oobas'             => 'Xbb_Tags_Code',
+            'oracle'            => 'Xbb_Tags_Code',
+            'oracle11'          => 'Xbb_Tags_Code',
+            'oxygene'           => 'Xbb_Tags_Code',
+            'oz'                => 'Xbb_Tags_Code',
+            'pascal'            => 'Xbb_Tags_Code',
+            'pcre'              => 'Xbb_Tags_Code',
+            'per'               => 'Xbb_Tags_Code',
+            'perl'              => 'Xbb_Tags_Code',
+            'perl6'             => 'Xbb_Tags_Code',
+            'pf'                => 'Xbb_Tags_Code',
+            'php'               => 'Xbb_Tags_Code',
+            'pic16'             => 'Xbb_Tags_Code',
+            'pike'              => 'Xbb_Tags_Code',
+            'pixelbender'       => 'Xbb_Tags_Code',
+            'pli'               => 'Xbb_Tags_Code',
+            'plsql'             => 'Xbb_Tags_Code',
+            'postgresql'        => 'Xbb_Tags_Code',
+            'povray'            => 'Xbb_Tags_Code',
+            'powershell'        => 'Xbb_Tags_Code',
+            'pre'               => 'Xbb_Tags_Code',
+            'proftpd'           => 'Xbb_Tags_Code',
+            'progress'          => 'Xbb_Tags_Code',
+            'prolog'            => 'Xbb_Tags_Code',
+            'properties'        => 'Xbb_Tags_Code',
+            'providex'          => 'Xbb_Tags_Code',
+            'purebasic'         => 'Xbb_Tags_Code',
+            'pycon'             => 'Xbb_Tags_Code',
+            'python'            => 'Xbb_Tags_Code',
+            'q'                 => 'Xbb_Tags_Code',
+            'qbasic'            => 'Xbb_Tags_Code',
+            'rails'             => 'Xbb_Tags_Code',
+            'rebol'             => 'Xbb_Tags_Code',
+            'reg'               => 'Xbb_Tags_Code',
+            'robots'            => 'Xbb_Tags_Code',
+            'rpmspec'           => 'Xbb_Tags_Code',
+            'rsplus'            => 'Xbb_Tags_Code',
+            'ruby'              => 'Xbb_Tags_Code',
+            'sas'               => 'Xbb_Tags_Code',
+            'scala'             => 'Xbb_Tags_Code',
+            'scheme'            => 'Xbb_Tags_Code',
+            'scilab'            => 'Xbb_Tags_Code',
+            'sdlbasic'          => 'Xbb_Tags_Code',
+            'smalltalk'         => 'Xbb_Tags_Code',
+            'smarty'            => 'Xbb_Tags_Code',
+            'sql'               => 'Xbb_Tags_Code',
+            'systemverilog'     => 'Xbb_Tags_Code',
+            't-sql'             => 'Xbb_Tags_Code',
+            'tcl'               => 'Xbb_Tags_Code',
+            'teraterm'          => 'Xbb_Tags_Code',
+            'text'              => 'Xbb_Tags_Code',
+            'thinbasic'         => 'Xbb_Tags_Code',
+            'typoscript'        => 'Xbb_Tags_Code',
+            'unicon'            => 'Xbb_Tags_Code',
+            'uscript'           => 'Xbb_Tags_Code',
+            'vala'              => 'Xbb_Tags_Code',
+            'vb'                => 'Xbb_Tags_Code',
+            'vb.net'            => 'Xbb_Tags_Code',
+            'verilog'           => 'Xbb_Tags_Code',
+            'vhdl'              => 'Xbb_Tags_Code',
+            'vim'               => 'Xbb_Tags_Code',
+            'visualfoxpro'      => 'Xbb_Tags_Code',
+            'visualprolog'      => 'Xbb_Tags_Code',
+            'whitespace'        => 'Xbb_Tags_Code',
+            'whois'             => 'Xbb_Tags_Code',
+            'winbatch'          => 'Xbb_Tags_Code',
+            'xbasic'            => 'Xbb_Tags_Code',
+            'xml'               => 'Xbb_Tags_Code',
+            'xorg_conf'         => 'Xbb_Tags_Code',
+            'xpp'               => 'Xbb_Tags_Code',
+            'yaml'              => 'Xbb_Tags_Code',
+            'z80'               => 'Xbb_Tags_Code',
+            'zxbasic'           => 'Xbb_Tags_Code',
+        );
+    }
+
+    /**
+     * Prepare children
+     *
+     * Массив пар: 'модель_поведения_тегов' => массив_моделей_поведений_тегов.
+     * Накладывает ограничения на вложенность тегов. Теги с моделями поведения, не
+     * указанными в массиве справа, вложенные в тег с моделью поведения, указанной
+     * слева, будут игнорироваться как неправильно вложенные.
+     *
+     * @access protected
+     * @return array
+     */
+
+    protected function prepareChildren()
+    {
+        return array(
+            'a'       => ['code', 'img', 'span'],
+            'caption' => ['a', 'code', 'img', 'span'],
+            'code'    => [],
+            'div'     => ['a', 'code', 'div', 'hr', 'img', 'p', 'pre', 'span', 'table', 'ul'],
+            'hr'      => [],
+            'img'     => [],
+            'li'      => ['a', 'code', 'div', 'hr', 'img', 'p', 'pre', 'span', 'table', 'ul'],
+            'p'       => ['a', 'code', 'img', 'span'],
+            'pre'     => [],
+            'span'    => ['a', 'code', 'img', 'span'],
+            'table'   => ['caption', 'tr'],
+            'td'      => ['a', 'code', 'div', 'hr', 'img', 'p', 'pre', 'span', 'table', 'ul'],
+            'tr'      => ['td'],
+            'ul'      => ['li'],
+        );
+    }
+
+    /**
+     * Prepare ends
+     *
+     * Массив пар: 'модель_поведения_тегов' => массив_моделей_поведений_тегов.
+     * Накладывает ограничения на вложенность тегов. Теги с моделями поведения, не
+     * указанными в массиве справа, вложенные в тег с моделью поведения, указанной
+     * слева, будут игнорироваться как неправильно вложенные.
+     *
+     * @access protected
+     * @return array
+     */
+
+    protected function prepareEnds()
+    {
+        return array(
+            'a'       => ['a', 'caption', 'div', 'hr', 'li', 'p', 'pre', 'table', 'td', 'tr', 'ul'],
+            'caption' => ['tr'],
+            'code'    => [],
+            'div'     => ['li', 'tr', 'td'],
+            'hr'      => ['a', 'caption', 'code', 'div', 'hr', 'img', 'li', 'p', 'pre', 'span', 'table', 'td', 'tr', 'ul'],
+            'img'     => ['a', 'caption', 'code', 'div', 'hr', 'img', 'li', 'p', 'pre', 'span', 'table', 'td', 'tr', 'ul'],
+            'li'      => ['li', 'tr', 'td'],
+            'p'       => ['div', 'hr', 'li', 'p', 'pre', 'table', 'td', 'tr', 'ul'],
+            'pre'     => [],
+            'span'    => ['div', 'hr', 'li', 'p', 'pre', 'table', 'td', 'tr', 'ul'],
+            'table'   => ['table'],
+            'td'      => ['td', 'tr'],
+            'tr'      => ['tr'],
+            'ul'      => [],
+        );
     }
 }
