@@ -21,64 +21,120 @@
  *                                                                            *
  ******************************************************************************/
 
-class bbcode {
+class Bbcode
+{
 	/*
 	Имя тега, которому сопоставлен экземпляр класса.
 	Пустая строка, если экземпляр не сопоставлен никакому тегу.
 	*/
+
     public $tag = '';
+
     /*
     Массив значений атрибутов тега, которому сопоставлен экземпляр класса.
     Пуст, если экземпляр не сопоставлен никакому тегу.
     */
+
     public $attrib = array();
+
     /*
     Текст BBCode
     */
+
     public $text = '';
+
     /*
     Массив, - результат синтаксического разбора текста BBCode. Описание смотрите
     в документации.
     */
+
     public $syntax = array();
+
     /*
     Дерево семантического разбора текста BBCode. Описание смотрите в
     документации.
     */
+
     public $tree = array();
+
     /*
     Список поддерживаемых тегов с указанием специализированных классов.
     Смотрите файл config/parser.config.php
     */
+
     public $tags = array();
+
     /*
     Смайлики и прочие мнемоники. Массив: 'мнемоника' => 'ее_замена'.
     */
+
     public $mnemonics = array();
+
     /*
     Флажок, включающий/выключающий автоматические ссылки.
     Смотрите файл config/parser.config.php
     */
+
     public $autolinks = true;
+
     /*
     Массив замен для автоматических ссылок.
     Смотрите файл config/parser.config.php
     */
+
     public $preg_autolinks = array(
-        'pattern' => array(),
-        'replacement' => array(),
-        'highlight' => array(),
+        'pattern' => array(
+            "'[\w\+]+://[A-z0-9\.\?\+\-/_=&%#:;]+[\w/=]+'si",
+            "'([^/])(www\.[A-z0-9\.\?\+\-/_=&%#:;]+[\w/=]+)'si",
+            "'[\w]+[\w\-\.]+@[\w\-\.]+\.[\w]+'si",
+        ),
+        'replacement' => array(
+            '<a href="$0" target="_blank">$0</a>',
+            '$1<a href="http://$2" target="_blank">$2</a>',
+            '<a href="mailto:$0">$0</a>',
+        ),
+        'highlight' => array(
+            '<span class="bb_autolink">$0</span>',
+            '$1<span class="bb_autolink">$2</span>',
+            '<span class="bb_autolink">$0</span>',
+        ),
     );
+
+    /**
+     * Is close flag
+     *
+     * @var bool
+     * @access public
+     */
+
     public $is_close = false;
+
+    /**
+     * Left br
+     *
+     * @var int
+     * @access public
+     */
+
     public $lbr = 0;
+
+    /**
+     * Right br
+     *
+     * @var int
+     * @access public
+     */
+
     public $rbr = 0;
+
     /* Статистические сведения по обработке BBCode */
     public $stat = array(
-        'time_parse' => 0,  // Время парсинга
-        'time_html' => 0,   // Время генерации HTML-а
-        'count_tags' => 0,  // Число тегов BBCode
-        'count_level' => 0  // Число уровней вложенности тегов BBCode
+        'time_parse'    => 0, // Время парсинга
+        'time_html'     => 0, // Время генерации HTML-а
+        'count_tags'    => 0, // Число тегов BBCode
+        'count_level'   => 0  // Число уровней вложенности тегов BBCode
     );
+
     /*
     Модель поведения тега (в плане вложенности), которому сопоставлен экземпляр
     данного класса. Модели поведения могут быть следующими:
@@ -99,19 +155,27 @@ class bbcode {
     Конкретное содержание в понятие "модель поведения" вкладывается настройками
     в файле config/parser.config.php
     */
+
     public $behaviour = 'div';
+
     /*
     Текущая дирректория.
     */
+
     private $_current_path;
+
     /*
     Для нужд парсера. - Позиция очередного обрабатываемого символа.
     */
+
     private $_cursor;
+
     /*
     Массив объектов, - представителей отдельных тегов.
     */
+
     private $_tag_objects = array();
+
     /*
     Массив пар: 'модель_поведения_тегов' => массив_моделей_поведений_тегов.
     Накладывает ограничения на вложенность тегов. Теги с моделями поведения, не
@@ -119,7 +183,9 @@ class bbcode {
     слева, будут игнорироваться как неправильно вложенные.
     Смотрите файл config/parser.config.php
     */
+
     private $_children;
+
     /*
     Массив пар: 'модель_поведения_тегов' => массив_моделей_поведений_тегов.
     Накладывает ограничения на вложенность тегов.
@@ -128,16 +194,26 @@ class bbcode {
     указанных справа.
     Смотрите файл config/parser.config.php
     */
+
     private $_ends;
 
-    /* Конструктор класса */
-    function bbcode($code = '') {
+    /**
+     * __construct
+     *
+     * @param string    $code
+     * @access public
+     * @return void
+     */
+
+    public function __construct($code = '')
+    {
         $this->_current_path = dirname(__FILE__) . DIRECTORY_SEPARATOR;
-        include $this->_current_path . 'config' . DIRECTORY_SEPARATOR . 'parser.config.php';
         include $this->_current_path . 'config' . DIRECTORY_SEPARATOR . 'tags.php';
-        $this->tags = $tags;
-        $this->_children = $children;
-        $this->_ends = $ends;
+
+        $this->tags         = $tags;
+        $this->_children    = $children;
+        $this->_ends        = $ends;
+
         $this->parse($code);
     }
 
@@ -146,8 +222,8 @@ class bbcode {
 
                         "число (тип лексемы) - лексема"
 
-    Лексема - подстрока строки $this -> text, начинающаяся с позиции
-                                $this -> _cursor
+    Лексема - подстрока строки $this->text, начинающаяся с позиции
+                                $this->_cursor
     Типы лексем могут быть следующие:
 
     0 - открывющая квадратная скобка ("[")
@@ -161,21 +237,28 @@ class bbcode {
     7 - последовательность прочих символов, не являющаяся именем тега
     8 - имя тега
     */
-    function get_token() {
-        $token = '';
+
+    protected function get_token()
+    {
+        $token      = '';
         $token_type = false;
-        $char_type = false;
-        while (true) {
+        $char_type  = false;
+
+        while (true)
+        {
             $token_type = $char_type;
-            if (! isset($this -> text{$this -> _cursor})) {
+            if (! isset($this->text{$this->_cursor}))
+            {
                 if (false === $char_type) {
                     return false;
                 } else {
                     break;
                 }
             }
-            $char = $this -> text{$this -> _cursor};
-            switch ($char) {
+
+            $char = $this->text{$this->_cursor};
+            switch ($char)
+            {
                 case '[':
                     $char_type = 0;
                     break;
@@ -215,48 +298,78 @@ class bbcode {
                 default:
                     $char_type = 7;
             }
-            if (false === $token_type) {
+
+            if (false === $token_type)
+            {
                 $token = $char;
-            } elseif (5 >= $token_type) {
-                break;
-            } elseif ($char_type == $token_type) {
-                $token .= $char;
-            } else {
+            }
+            elseif (5 >= $token_type)
+            {
                 break;
             }
-            $this -> _cursor += 1;
+            elseif ($char_type == $token_type)
+            {
+                $token .= $char;
+            }
+            else
+            {
+                break;
+            }
+
+            $this->_cursor += 1;
         }
-        if (isset($this -> tags[strtolower($token)])) {
+
+        if (isset($this->tags[strtolower($token)]))
             $token_type = 8;
-        }
+
         return array($token_type, $token);
     }
 
-    function parse($code = null) {
+    /**
+     * Parse
+     *
+     * @param string    $code
+     * @access public
+     * @return void
+     */
+
+    public function parse($code = null)
+    {
         $time_start = $this->_getmicrotime();
-        if (is_array($code)) {
+
+        if (is_array($code))
+        {
             $is_tree = false;
-            foreach ($code as $val) {
-                if (isset($val['val'])) {
+            foreach ($code as $val)
+            {
+                if (isset($val['val']))
+                {
                 	$this->tree = $code;
                 	$this->syntax = $this->get_syntax();
                 	$is_tree = true;
                 	break;
                 }
             }
-            if (! $is_tree) {
+
+            if (! $is_tree)
+            {
                 $this->syntax = $code;
                 $this->get_tree();
             }
+
             $this->text = '';
-            foreach ($this->syntax as $val) {
+            foreach ($this->syntax as $val)
                 $this->text .= $val['str'];
-            }
+
             $this->stat['time_parse'] = $this->_getmicrotime() - $time_start;
+
             return $this->syntax;
-        } elseif ($code) {
+        }
+        elseif ($code)
+        {
         	$this->text = $code;
         }
+
         /*
         Используем метод конечных автоматов
         Список возможных состояний автомата:
@@ -300,30 +413,30 @@ class bbcode {
         Описание конечного автомата:
         */
         $finite_automaton = array(
-               // Предыдущие |   Состояния для текущих событий (лексем)   |
-               //  состояния |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |
-                   0 => array(  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 )
-                ,  1 => array(  2 ,  3 ,  3 ,  3 ,  3 ,  4 ,  3 ,  3 ,  5 )
-                ,  2 => array(  2 ,  3 ,  3 ,  3 ,  3 ,  4 ,  3 ,  3 ,  5 )
-                ,  3 => array(  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 )
-                ,  4 => array(  2 ,  6 ,  3 ,  3 ,  3 ,  3 ,  3 ,  3 ,  7 )
-                ,  5 => array(  2 ,  6 ,  3 ,  3 ,  8 ,  9 , 10 ,  3 ,  3 )
-                ,  6 => array(  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 )
-                ,  7 => array(  2 ,  6 ,  3 ,  3 ,  3 ,  3 ,  3 ,  3 ,  3 )
-                ,  8 => array( 13 , 13 , 11 , 12 , 13 , 13 , 14 , 13 , 13 )
-                ,  9 => array(  2 ,  6 ,  3 ,  3 ,  3 ,  3 ,  3 ,  3 ,  3 )
-                , 10 => array(  2 ,  6 ,  3 ,  3 ,  8 ,  9 ,  3 , 15 , 15 )
-                , 11 => array( 16 , 16 , 17 , 16 , 16 , 16 , 16 , 16 , 16 )
-                , 12 => array( 18 , 18 , 18 , 17 , 18 , 18 , 18 , 18 , 18 )
-                , 13 => array( 19 ,  6 , 19 , 19 , 19 , 19 , 17 , 19 , 19 )
-                , 14 => array(  2 ,  3 , 11 , 12 , 13 , 13 ,  3 , 13 , 13 )
-                , 15 => array(  2 ,  6 ,  3 ,  3 ,  8 ,  9 , 10 ,  3 ,  3 )
-                , 16 => array( 16 , 16 , 17 , 16 , 16 , 16 , 16 , 16 , 16 )
-                , 17 => array(  2 ,  6 ,  3 ,  3 ,  3 ,  9 , 20 , 15 , 15 )
-                , 18 => array( 18 , 18 , 18 , 17 , 18 , 18 , 18 , 18 , 18 )
-                , 19 => array( 19 ,  6 , 19 , 19 , 19 , 19 , 20 , 19 , 19 )
-                , 20 => array(  2 ,  6 ,  3 ,  3 ,  3 ,  9 ,  3 , 15 , 15 )
-            );
+            // Предыдущие |   Состояния для текущих событий (лексем)  |
+            // состояния  | 0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |
+               0 => array(  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 )
+            ,  1 => array(  2 ,  3 ,  3 ,  3 ,  3 ,  4 ,  3 ,  3 ,  5 )
+            ,  2 => array(  2 ,  3 ,  3 ,  3 ,  3 ,  4 ,  3 ,  3 ,  5 )
+            ,  3 => array(  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 )
+            ,  4 => array(  2 ,  6 ,  3 ,  3 ,  3 ,  3 ,  3 ,  3 ,  7 )
+            ,  5 => array(  2 ,  6 ,  3 ,  3 ,  8 ,  9 , 10 ,  3 ,  3 )
+            ,  6 => array(  1 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 ,  0 )
+            ,  7 => array(  2 ,  6 ,  3 ,  3 ,  3 ,  3 ,  3 ,  3 ,  3 )
+            ,  8 => array( 13 , 13 , 11 , 12 , 13 , 13 , 14 , 13 , 13 )
+            ,  9 => array(  2 ,  6 ,  3 ,  3 ,  3 ,  3 ,  3 ,  3 ,  3 )
+            , 10 => array(  2 ,  6 ,  3 ,  3 ,  8 ,  9 ,  3 , 15 , 15 )
+            , 11 => array( 16 , 16 , 17 , 16 , 16 , 16 , 16 , 16 , 16 )
+            , 12 => array( 18 , 18 , 18 , 17 , 18 , 18 , 18 , 18 , 18 )
+            , 13 => array( 19 ,  6 , 19 , 19 , 19 , 19 , 17 , 19 , 19 )
+            , 14 => array(  2 ,  3 , 11 , 12 , 13 , 13 ,  3 , 13 , 13 )
+            , 15 => array(  2 ,  6 ,  3 ,  3 ,  8 ,  9 , 10 ,  3 ,  3 )
+            , 16 => array( 16 , 16 , 17 , 16 , 16 , 16 , 16 , 16 , 16 )
+            , 17 => array(  2 ,  6 ,  3 ,  3 ,  3 ,  9 , 20 , 15 , 15 )
+            , 18 => array( 18 , 18 , 18 , 17 , 18 , 18 , 18 , 18 , 18 )
+            , 19 => array( 19 ,  6 , 19 , 19 , 19 , 19 , 20 , 19 , 19 )
+            , 20 => array(  2 ,  6 ,  3 ,  3 ,  3 ,  9 ,  3 , 15 , 15 )
+        );
         // Закончили описание конечного автомата
         $mode = 0;
         $this->syntax = array();
@@ -334,20 +447,21 @@ class bbcode {
         $type = false;
         $this ->_cursor = 0;
         // Сканируем массив лексем с помощью построенного автомата:
-        while ($token = $this -> get_token()) {
+        while ($token = $this->get_token())
+        {
             $previous_mode = $mode;
             $mode = $finite_automaton[$previous_mode][$token[0]];
             if (-1 < $token_key) {
-                $type = $this -> syntax[$token_key]['type'];
+                $type = $this->syntax[$token_key]['type'];
             } else {
                 $type = false;
             }
             switch ($mode) {
             case 0:
                 if ('text' === $type) {
-                    $this -> syntax[$token_key]['str'] .= $token[1];
+                    $this->syntax[$token_key]['str'] .= $token[1];
                 } else {
-                    $this -> syntax[++$token_key] = array(
+                    $this->syntax[++$token_key] = array(
                             'type' => 'text',
                             'str' => $token[1]
                         );
@@ -363,9 +477,9 @@ class bbcode {
                 break;
             case 2:
                 if ('text' === $type) {
-                    $this -> syntax[$token_key]['str'] .= $decomposition['str'];
+                    $this->syntax[$token_key]['str'] .= $decomposition['str'];
                 } else {
-                    $this -> syntax[++$token_key] = array(
+                    $this->syntax[++$token_key] = array(
                         'type' => 'text',
                         'str' => $decomposition['str']
                     );
@@ -379,10 +493,10 @@ class bbcode {
                 break;
             case 3:
                 if ('text' === $type) {
-                    $this -> syntax[$token_key]['str'] .= $decomposition['str'];
-                    $this -> syntax[$token_key]['str'] .= $token[1];
+                    $this->syntax[$token_key]['str'] .= $decomposition['str'];
+                    $this->syntax[$token_key]['str'] .= $token[1];
                 } else {
-                    $this -> syntax[++$token_key] = array(
+                    $this->syntax[++$token_key] = array(
                         'type' => 'text',
                         'str' => $decomposition['str'].$token[1]
                     );
@@ -411,7 +525,7 @@ class bbcode {
                 }
                 $decomposition['str'] .= ']';
                 $decomposition['layout'][] = array( 0, ']' );
-                $this -> syntax[++$token_key] = $decomposition;
+                $this->syntax[++$token_key] = $decomposition;
                 $decomposition = array();
                 break;
             case 7:
@@ -488,22 +602,35 @@ class bbcode {
                 break;
             }
         }
-        if (count($decomposition)) {
+
+        if (count($decomposition))
+        {
             if ('text' === $type) {
-                $this -> syntax[$token_key]['str'] .= $decomposition['str'];
+                $this->syntax[$token_key]['str'] .= $decomposition['str'];
             } else {
-                $this -> syntax[++$token_key] = array(
+                $this->syntax[++$token_key] = array(
                     'type' => 'text',
                     'str' => $decomposition['str']
                 );
             }
         }
+
         $this->get_tree();
         $this->stat['time_parse'] = $this->_getmicrotime() - $time_start;
+
         return $this->syntax;
     }
 
-    function specialchars($string) {
+    /**
+     * Specialchars
+     *
+     * @param string    $string
+     * @access protected
+     * @return string
+     */
+
+    protected function specialchars($string)
+    {
         $chars = array(
             '[' => '@l;',
             ']' => '@r;',
@@ -511,10 +638,20 @@ class bbcode {
             "'" => '@a;',
             '@' => '@at;'
         );
+
         return strtr($string, $chars);
     }
 
-    function unspecialchars($string) {
+    /**
+     * Unspecialchars
+     *
+     * @param string    $string
+     * @access protected
+     * @return string
+     */
+
+    protected function unspecialchars($string)
+    {
         $chars = array(
             '@l;'  => '[',
             '@r;'  => ']',
@@ -522,6 +659,7 @@ class bbcode {
             '@a;'  => "'",
             '@at;' => '@'
         );
+
         return strtr($string, $chars);
     }
 
@@ -529,25 +667,34 @@ class bbcode {
     Функция проверяет, должен ли тег с именем $current закрыться, если
     начинается тег с именем $next.
     */
-    function must_close_tag($current, $next) {
-        if (isset($this -> tags[$current])) {
+
+    protected function must_close_tag($current, $next)
+    {
+        if (isset($this->tags[$current])) {
             $this->_includeTagFile($current);
-            $class_vars = get_class_vars($this -> tags[$current]);
+            $class_vars = get_class_vars($this->tags[$current]);
             $current_behaviour = $class_vars['behaviour'];
-        } else {
+        }
+        else
+        {
             $current_behaviour = $this->behaviour;
         }
-        if (isset($this -> tags[$next])) {
+
+        if (isset($this->tags[$next]))
+        {
             $this->_includeTagFile($next);
-            $class_vars = get_class_vars($this -> tags[$next]);
+            $class_vars = get_class_vars($this->tags[$next]);
             $next_behaviour = $class_vars['behaviour'];
-        } else {
+        }
+        else
+        {
             $next_behaviour = $this->behaviour;
         }
+
         $must_close = false;
-        if (isset($this->_ends[$current_behaviour])) {
+        if (isset($this->_ends[$current_behaviour]))
             $must_close = in_array($next_behaviour, $this->_ends[$current_behaviour]);;
-        }
+
         return $must_close;
     }
 
@@ -557,19 +704,21 @@ class bbcode {
     Если $parent - пустая строка, то проверяется, разрешено ли $child входить в
     корень дерева BBCode.
     */
-    function isPermissiblyChild($parent, $child) {
+
+    protected function isPermissiblyChild($parent, $child)
+    {
         $parent = (string) $parent;
         $child = (string) $child;
-        if (isset($this -> tags[$parent])) {
+        if (isset($this->tags[$parent])) {
             $this->_includeTagFile($parent);
-            $class_vars = get_class_vars($this -> tags[$parent]);
+            $class_vars = get_class_vars($this->tags[$parent]);
             $parent_behaviour = $class_vars['behaviour'];
         } else {
             $parent_behaviour = $this->behaviour;
         }
-        if (isset($this -> tags[$child])) {
+        if (isset($this->tags[$child])) {
             $this->_includeTagFile($child);
-            $class_vars = get_class_vars($this -> tags[$child]);
+            $class_vars = get_class_vars($this->tags[$child]);
             $child_behaviour = $class_vars['behaviour'];
         } else {
             $child_behaviour = $this->behaviour;
@@ -583,16 +732,28 @@ class bbcode {
         return $permissibly;
     }
 
-    function normalize_bracket($syntax) {
-        $structure = array();
-        $structure_key = -1;
-        $level = 0;
-        $open_tags = array();
-        foreach ($syntax as $val) {
+    /**
+     * Normalize bracket
+     *
+     * @param array     $syntax
+     * @access protected
+     * @return array
+     */
+
+    protected function normalize_bracket($syntax)
+    {
+        $structure      = array();
+        $structure_key  = -1;
+        $level          = 0;
+        $open_tags      = array();
+
+        foreach ($syntax as $val)
+        {
             unset($val['layout']);
-            switch ($val['type']) {
+            switch ($val['type'])
+            {
                 case 'text':
-                    $val['str'] = $this -> unspecialchars($val['str']);
+                    $val['str'] = $this->unspecialchars($val['str']);
                     $type = (-1 < $structure_key)
                         ? $structure[$structure_key]['type'] : false;
                     if ('text' === $type) {
@@ -607,7 +768,7 @@ class bbcode {
             	        array(&$this, 'unspecialchars'), $val['attrib']
             	    );
                     foreach (array_reverse($open_tags,true) as $ult_key => $ultimate) {
-                        if ($this -> must_close_tag($ultimate, $val['name'])) {
+                        if ($this->must_close_tag($ultimate, $val['name'])) {
                             $structure[++$structure_key] = array(
                                     'type'  => 'close',
                                     'name'  => $ultimate,
@@ -628,7 +789,7 @@ class bbcode {
             	        array(&$this, 'unspecialchars'), $val['attrib']
             	    );
                     foreach (array_reverse($open_tags,true) as $ult_key => $ultimate) {
-                        if ($this -> must_close_tag($ultimate, $val['name'])) {
+                        if ($this->must_close_tag($ultimate, $val['name'])) {
                             $structure[++$structure_key] = array(
                                     'type'  => 'close',
                                     'name'  => $ultimate,
@@ -638,7 +799,7 @@ class bbcode {
                             unset($open_tags[$ult_key]);
                         } else { break; }
                     }
-                    $class_vars = get_class_vars($this -> tags[$val['name']]);
+                    $class_vars = get_class_vars($this->tags[$val['name']]);
                     if ($class_vars['is_close']) {
                         $val['type'] = 'open/close';
                         $structure[++$structure_key] = $val;
@@ -705,7 +866,9 @@ class bbcode {
                     unset($open_tags[$ult_key]);
             }
         }
-        foreach (array_reverse($open_tags,true) as $ult_key => $ultimate) {
+
+        foreach (array_reverse($open_tags,true) as $ult_key => $ultimate)
+        {
             $structure[++$structure_key] = array(
                     'type'  => 'close',
                     'name'  => $ultimate,
@@ -714,12 +877,21 @@ class bbcode {
                 );
             unset($open_tags[$ult_key]);
         }
+
         return $structure;
     }
 
-    function get_tree() {
-        /* Превращаем $this -> syntax в правильную скобочную структуру */
-        $structure = $this -> normalize_bracket($this -> syntax);
+    /**
+     * Returns tree
+     *
+     * @access protected
+     * @return array
+     */
+
+    protected function get_tree()
+    {
+        /* Превращаем $this->syntax в правильную скобочную структуру */
+        $structure = $this->normalize_bracket($this->syntax);
         /* Отслеживаем, имеют ли элементы неразрешенные подэлементы.
            Соответственно этому исправляем $structure. */
         $normalized = array();
@@ -727,9 +899,12 @@ class bbcode {
         $level = 0;
         $open_tags = array();
         $not_tags = array();
-        $this -> stat['count_tags'] = 0;
-        foreach ($structure as $val) {
-            switch ($val['type']) {
+        $this->stat['count_tags'] = 0;
+
+        foreach ($structure as $val)
+        {
+            switch ($val['type'])
+            {
                 case 'text':
                     $type = (-1 < $normal_key)
                         ? $normalized[$normal_key]['type'] : false;
@@ -762,7 +937,7 @@ class bbcode {
                     }
                     $normalized[++$normal_key] = $val;
                     $normalized[$normal_key]['level'] = $level;
-                    $this -> stat['count_tags'] += 1;
+                    $this->stat['count_tags'] += 1;
                     break;
                 case 'open':
                     $this->_includeTagFile($val['name']);
@@ -770,7 +945,8 @@ class bbcode {
                     end($open_tags);
                     $parent = $is_open ? current($open_tags) : $this->tag;
                     $permissibly = $this->isPermissiblyChild($parent, $val['name']);
-                    if (! $permissibly) {
+                    if (! $permissibly)
+                    {
                         $not_tags[$val['level']] = $val['name'];
                         $type = (-1 < $normal_key)
                             ? $normalized[$normal_key]['type'] : false;
@@ -789,57 +965,75 @@ class bbcode {
                     $normalized[$normal_key]['level'] = $level++;
                     $ult_key = count($open_tags);
                     $open_tags[$ult_key] = $val['name'];
-                    $this -> stat['count_tags'] += 1;
+                    $this->stat['count_tags'] += 1;
                     break;
                 case 'close':
-                    $not_normal = isset($not_tags[$val['level']])
-                        && $not_tags[$val['level']] = $val['name'];
-                    if ($not_normal) {
+                    $not_normal = isset($not_tags[$val['level']]) && $not_tags[$val['level']] = $val['name'];
+
+                    if ($not_normal)
+                    {
                         unset($not_tags[$val['level']]);
+
                         $type = (-1 < $normal_key)
-                            ? $normalized[$normal_key]['type'] : false;
-                        if ( 'text' === $type ) {
+                            ? $normalized[$normal_key]['type']
+                            : false
+                        ;
+
+                        if ( 'text' === $type )
+                        {
                             $normalized[$normal_key]['str'] .= $val['str'];
-                        } else {
+                        }
+                        else
+                        {
                             $normalized[++$normal_key] = array(
-                                    'type'  => 'text',
-                                    'str'   => $val['str'],
-                                    'level' => $level
-                                );
+                                'type'  => 'text',
+                                'str'   => $val['str'],
+                                'level' => $level
+                            );
                         }
                         break;
                     }
+
                     $normalized[++$normal_key] = $val;
                     $normalized[$normal_key]['level'] = --$level;
                     $ult_key = count($open_tags) - 1;
                     unset($open_tags[$ult_key]);
-                    $this -> stat['count_tags'] += 1;
+                    $this->stat['count_tags'] += 1;
                     break;
             }
         }
+
         unset($structure);
+
         // Формируем дерево элементов
         $result = array();
         $result_key = -1;
         $open_tags = array();
-        $this -> stat['count_level'] = 0;
-        foreach ($normalized as $val) {
-            switch ($val['type']) {
+        $this->stat['count_level'] = 0;
+        foreach ($normalized as $val)
+        {
+            switch ($val['type'])
+            {
                 case 'text':
-                    if (! $val['level']) {
+                    if (! $val['level'])
+                    {
                         $result[++$result_key] = array(
                             'type' => 'text',
                             'str' => $val['str']
                         );
+
                         break;
                     }
+
                     $open_tags[$val['level']-1]['val'][] = array(
-                            'type' => 'text',
-                            'str' => $val['str']
-                        );
+                        'type' => 'text',
+                        'str' => $val['str']
+                    );
                     break;
+
                 case 'open/close':
-                    if (! $val['level']) {
+                    if (! $val['level'])
+                    {
                         $result[++$result_key] = array(
                             'type'   => 'item',
                             'name'   => $val['name'],
@@ -848,6 +1042,7 @@ class bbcode {
                         );
                         break;
                     }
+
                     $open_tags[$val['level']-1]['val'][] = array(
                         'type'   => 'item',
                         'name'   => $val['name'],
@@ -864,7 +1059,8 @@ class bbcode {
                     );
                     break;
                 case 'close':
-                    if (! $val['level']) {
+                    if (! $val['level'])
+                    {
                         $result[++$result_key] = $open_tags[0];
                         unset($open_tags[0]);
                         break;
@@ -873,40 +1069,60 @@ class bbcode {
                     unset($open_tags[$val['level']]);
                     break;
             }
-            if ($val['level'] > $this -> stat['count_level']) {
-                $this -> stat['count_level'] += 1;
-            }
+
+            if ($val['level'] > $this->stat['count_level'])
+                $this->stat['count_level'] += 1;
         }
-        $this -> tree = $result;
+
+        $this->tree = $result;
         return $result;
     }
 
-    function get_syntax($tree = false) {
-        if (! is_array($tree)) {
-            $tree = $this -> tree;
-        }
+    /**
+     * Returns syntax
+     *
+     * @param bool      $tree
+     * @access protected
+     * @return void
+     */
+
+    protected function get_syntax($tree = false)
+    {
+        if (!is_array($tree))
+            $tree = $this->tree;
+
         $syntax = array();
-        foreach ($tree as $elem) {
-            if ('text' == $elem['type']) {
+        foreach ($tree as $elem)
+        {
+            if ('text' == $elem['type'])
+            {
             	$syntax[] = array(
             	    'type' => 'text',
-            	    'str' => $this -> specialchars($elem['str'])
+            	    'str' => $this->specialchars($elem['str'])
             	);
-            } else {
-                $sub_elems = $this -> get_syntax($elem['val']);
+            }
+            else
+            {
+                $sub_elems = $this->get_syntax($elem['val']);
                 $str = '';
                 $layout = array(array(0, '['));
-                foreach ($elem['attrib'] as $name => $val) {
-                    $val = $this -> specialchars($val);
-                    if ($str) {
+                foreach ($elem['attrib'] as $name => $val)
+                {
+                    $val = $this->specialchars($val);
+                    if ($str)
+                    {
                     	$str .= ' ';
                     	$layout[] = array(4, ' ');
                     	$layout[] = array(6, $name);
-                    } else {
+                    }
+                    else
+                    {
                         $layout[] = array(2, $name);
                     }
+
                     $str .= $name;
-                    if ($val) {
+                    if ($val)
+                    {
                     	$str .= '="'.$val.'"';
                     	$layout[] = array(3, '=');
                     	$layout[] = array(5, '"');
@@ -914,13 +1130,18 @@ class bbcode {
                     	$layout[] = array(5, '"');
                     }
                 }
-                if (count($sub_elems)) {
+
+                if (count($sub_elems))
+                {
                 	$str = '['.$str.']';
-                } else {
+                }
+                else
+                {
                     $str = '['.$str.' /]';
                     $layout[] = array(4, ' ');
                     $layout[] = array(1, '/');
                 }
+
                 $layout[] = array(0, ']');
                 $syntax[] = array(
                     'type' => count($sub_elems) ? 'open' : 'open/close',
@@ -929,8 +1150,12 @@ class bbcode {
                     'attrib' => $elem['attrib'],
                     'layout' => $layout
                 );
-                foreach ($sub_elems as $sub_elem) { $syntax[] = $sub_elem; }
-                if (count($sub_elems)) {
+
+                foreach ($sub_elems as $sub_elem)
+                    $syntax[] = $sub_elem;
+
+                if (count($sub_elems))
+                {
                 	$syntax[] = array(
                 	    'type' => 'close',
                 	    'str' => '[/'.$elem['name'].']',
@@ -945,23 +1170,45 @@ class bbcode {
                 }
             }
         }
+
         return $syntax;
     }
 
-    function insert_smiles($text) {
-        $text = htmlspecialchars($text,ENT_NOQUOTES);
-        if ($this -> autolinks) {
-            $search = $this -> preg_autolinks['pattern'];
-            $replace = $this -> preg_autolinks['replacement'];
+    /**
+     * Insert ssmiles
+     *
+     * @param string    $text
+     * @access protected
+     * @return string
+     */
+
+    protected function insert_smiles($text)
+    {
+        $text = htmlspecialchars($text, ENT_NOQUOTES);
+
+        if ($this->autolinks)
+        {
+            $search = $this->preg_autolinks['pattern'];
+            $replace = $this->preg_autolinks['replacement'];
             $text = preg_replace($search, $replace, $text);
         }
+
         $text = str_replace('  ', '&#160;&#160;', nl2br($text));
-        $text = strtr($text, $this -> mnemonics);
+        $text = strtr($text, $this->mnemonics);
+
         return $text;
     }
 
-    function highlight() {
-        $time_start = $this -> _getmicrotime();
+    /**
+     * Highlight
+     *
+     * @access protected
+     * @return string
+     */
+
+    protected function highlight()
+    {
+        $time_start = $this->_getmicrotime();
         $chars = array(
             '@l;'  => '<span class="bb_spec_char">@l;</span>',
             '@r;'  => '<span class="bb_spec_char">@r;</span>',
@@ -969,25 +1216,35 @@ class bbcode {
             '@a;'  => '<span class="bb_spec_char">@a;</span>',
             '@at;' => '<span class="bb_spec_char">@at;</span>'
         );
-        $search = $this -> preg_autolinks['pattern'];
-        $replace = $this -> preg_autolinks['highlight'];
+
+        $search = $this->preg_autolinks['pattern'];
+        $replace = $this->preg_autolinks['highlight'];
+
         $str = '';
-        foreach($this -> syntax as $elem) {
-            if ('text' == $elem['type']) {
+        foreach($this->syntax as $elem)
+        {
+            if ('text' == $elem['type'])
+            {
                 $elem['str'] = strtr(htmlspecialchars($elem['str']), $chars);
-                foreach ($this -> mnemonics as $mnemonic => $value) {
+                foreach ($this->mnemonics as $mnemonic => $value)
+                {
                     $elem['str'] = str_replace(
                         $mnemonic,
-                        '<span class="bb_mnemonic">'.$mnemonic.'</span>',
+                        '<span class="bb_mnemonic">' . $mnemonic . '</span>',
                         $elem['str']
                     );
                 }
+
                 $elem['str'] = preg_replace($search, $replace, $elem['str']);
                 $str .= $elem['str'];
-            } else {
+            }
+            else
+            {
                 $str .= '<span class="bb_tag">';
-                foreach ($elem['layout'] as $val) {
-                    switch ($val[0]) {
+                foreach ($elem['layout'] as $val)
+                {
+                    switch ($val[0])
+                    {
                         case 0:
                             $str .= '<span class="bb_bracket">'.$val[1]
                                 .'</span>';
@@ -1030,26 +1287,40 @@ class bbcode {
                             $str .= $val[1];
                     }
                 }
+
                 $str .= '</span>';
             }
         }
+
         $str = nl2br($str);
         $str = str_replace('  ', '&#160;&#160;', $str);
-        $this -> stat['time_html'] = $this -> _getmicrotime() - $time_start;
+        $this->stat['time_html'] = $this->_getmicrotime() - $time_start;
+
         return $str;
     }
 
-    function get_html($elems = null) {
-        $time_start = $this -> _getmicrotime();
-        if (! is_array($elems)) {
-            $elems =& $this -> tree;
-        }
+    /**
+     * Returns html
+     *
+     * @param array     $elems
+     * @access public
+     * @return string
+     */
+
+    public function get_html($elems = null)
+    {
+        $time_start = $this->_getmicrotime();
+        if (! is_array($elems))
+            $elems =& $this->tree;
+
         $result = '';
-        $lbr = 0;
-        $rbr = 0;
-        foreach ($elems as $elem) {
-            if ('text' === $elem['type']) {
-                $elem['str'] = $this -> insert_smiles($elem['str']);
+        $lbr    = 0;
+        $rbr    = 0;
+        foreach ($elems as $elem)
+        {
+            if ('text' === $elem['type'])
+            {
+                $elem['str'] = $this->insert_smiles($elem['str']);
                 for ($i=0; $i < $rbr; ++$i) {
                     $elem['str'] = ltrim($elem['str']);
                     if ('<br />' === substr($elem['str'], 0, 6)) {
@@ -1057,7 +1328,9 @@ class bbcode {
                     }
                 }
                 $result .= $elem['str'];
-            } else {
+            }
+            else
+            {
             	$this->_includeTagFile($elem['name']);
             	$handler = $this->tags[$elem['name']];
                 /* Убираем лишние переводы строк */
@@ -1078,12 +1351,14 @@ class bbcode {
                 $tag->tag = $elem['name'];
                 $tag->attrib = $elem['attrib'];
                 $tag->tree = $elem['val'];
-                $result .= $tag -> get_html();
+                $result .= $tag->get_html();
             }
         }
+
         $result = preg_replace(
             "'\s*<br \/>\s*<br \/>\s*'si", "\n<br />&#160;<br />\n", $result
         );
+
         $this->stat['time_html'] = $this->_getmicrotime() - $time_start;
         return $result;
     }
@@ -1093,36 +1368,42 @@ class bbcode {
      * @param string $url
      * @return string
      */
-    function checkUrl($url) {
+
+    protected function checkUrl($url)
+    {
         $parse = parse_url($url);
 
         $out = '';
-        if (isset($parse['scheme'])) {
+        if (isset($parse['scheme']))
             $out .= $parse['scheme'] . '://';
-        }
-        if (isset($parse['user']) && isset($parse['pass'])) {
+
+        if (isset($parse['user']) && isset($parse['pass']))
+        {
             $out .= rawurlencode($parse['user']) . ':' . rawurlencode($parse['pass']) . '@';
-        } else if (isset($parse['user'])) {
+        }
+        else if (isset($parse['user']))
+        {
             $out .= rawurlencode($parse['user']) . '@';
         }
-        if (isset($parse['host'])) {
+
+        if (isset($parse['host']))
             $out .= rawurlencode($parse['host']);
-        }
-        if (isset($parse['port'])) {
+
+        if (isset($parse['port']))
             $out .= ':' . $parse['port'];
-        }
-        if (isset($parse['path'])) {
+
+        if (isset($parse['path']))
             $out .= str_replace('%2F', '/', rawurlencode($parse['path']));
-        }
-        if (isset($parse['query'])) {
+
+        if (isset($parse['query']))
+        {
             parse_str($parse['query'], $query);
             // PHP 5.1.2
             $out .= '?' . str_replace('+', '%20', rtrim(http_build_query($query, '', '&amp;'), '='));
         }
-        if (isset($parse['fragment'])) {
-            $out .= '#' . rawurlencode($parse['fragment']);
-        }
 
+        if (isset($parse['fragment']))
+            $out .= '#' . rawurlencode($parse['fragment']);
 
         return $out;
     }
@@ -1131,7 +1412,9 @@ class bbcode {
     * Функция возвращает текущий UNIX timestamp с микросекундами в формате float
     * @return float
     */
-    function _getmicrotime() {
+
+    protected function _getmicrotime()
+    {
         return microtime(true);
     }
 
@@ -1141,21 +1424,27 @@ class bbcode {
     возможно, переназначает тегу обработчик, - сопоставляет ему класс bbcode.
     Затем инициализирует объект обработчика (если он еще не инициализирован).
     */
-    function _includeTagFile($tagName) {
-        if (! class_exists($this->tags[$tagName])) {
-            $tag_file = $this->_current_path
-                . str_replace('_', DIRECTORY_SEPARATOR, $this->tags[$tagName])
-                . '.php';
-            if (is_file($tag_file)) {
+
+    function _includeTagFile($tagName)
+    {
+        if (! class_exists($this->tags[$tagName]))
+        {
+            $tag_file = $this->_current_path . str_replace('_', DIRECTORY_SEPARATOR, $this->tags[$tagName]) . '.php';
+
+            if (is_file($tag_file))
+            {
                 include_once $tag_file;
-            } else {
+            }
+            else
+            {
             	$this->tags[$tagName] = 'bbcode';
             }
         }
+
         $handler = $this->tags[$tagName];
-        if (! isset($this->_tag_objects[$handler])) {
+        if (! isset($this->_tag_objects[$handler]))
             $this->_tag_objects[$handler] = new $handler;
-        }
+
         return true;
     }
 }
